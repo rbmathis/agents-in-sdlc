@@ -70,31 +70,85 @@
     $: totalItems = pagination.total_items;
     $: showingStart = totalItems === 0 ? 0 : (pagination.page - 1) * pagination.per_page + 1;
     $: showingEnd = totalItems === 0 ? 0 : Math.min(pagination.page * pagination.per_page, totalItems);
-    // Smart pagination: show first, last, window around current, with ellipsis
-    $: pageNumbers = (() => {
+    /**
+     * Smart pagination: returns an array of page numbers and ellipsis for display.
+     * Always shows first, last, current, and up to 2 pages before/after current.
+     */
+    $: paginationItems = (() => {
         const total = pagination.total_pages;
         const current = pagination.page;
-        const maxVisible = 7; // window size (including first/last)
-        if (total <= maxVisible) {
+        const windowSize = 2; // pages before/after current
+        if (total <= 7) {
+            // Show all if few pages
             return Array.from({ length: total }, (_, i) => i + 1);
         }
-        const pages: (number | string)[] = [];
-        const windowSize = 3; // pages to show on each side of current
-        const start = Math.max(2, current - windowSize);
-        const end = Math.min(total - 1, current + windowSize);
-        pages.push(1);
-        if (start > 2) {
-            pages.push('...');
+        const items: (number | string)[] = [];
+        items.push(1);
+        if (current > windowSize + 2) {
+            items.push('...');
         }
-        for (let i = start; i <= end; i++) {
-            pages.push(i);
+        for (let i = Math.max(2, current - windowSize); i <= Math.min(total - 1, current + windowSize); i++) {
+            items.push(i);
         }
-        if (end < total - 1) {
-            pages.push('...');
+        if (current < total - windowSize - 1) {
+            items.push('...');
         }
-        pages.push(total);
-        return pages;
+        items.push(total);
+        return items;
     })();
+
+    const syncFiltersFromUrl = (): void => {
+        if (typeof window === 'undefined') {
+            return;
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        const urlCategoryId = params.get('category_id') ?? '';
+        const urlPublisherId = params.get('publisher_id') ?? '';
+        const urlPage = params.get('page');
+        const urlPerPage = params.get('per_page');
+
+        selectedCategoryId = urlCategoryId;
+        selectedPublisherId = urlPublisherId;
+
+        const parsedPage = urlPage ? Number.parseInt(urlPage, 10) : 1;
+        currentPage = Number.isNaN(parsedPage) || parsedPage < 1 ? 1 : parsedPage;
+
+        if (urlPerPage) {
+            const parsedPerPage = Number.parseInt(urlPerPage, 10);
+            if (!Number.isNaN(parsedPerPage) && pageSizeOptions.includes(parsedPerPage)) {
+                pageSize = parsedPerPage;
+            }
+        }
+    };
+
+    /**
+     * Updates the browser URL with current filter and pagination state.
+     * This function synchronizes the URL query parameters with the active filters,
+     * page number, and page size, allowing users to bookmark or share filtered views.
+     */
+    const updateBrowserUrl = (paginationState: Pagination): void => {
+        if (typeof window === 'undefined') {
+            return;
+        }
+
+        const params = new URLSearchParams();
+
+        if (selectedCategoryId) {
+            params.set('category_id', selectedCategoryId);
+        }
+
+        if (selectedPublisherId) {
+            params.set('publisher_id', selectedPublisherId);
+        }
+
+        params.set('page', paginationState.page.toString());
+        params.set('per_page', paginationState.per_page.toString());
+
+        const queryString = params.toString();
+        const newUrl = `${window.location.pathname}${queryString ? `?${queryString}` : ''}`;
+        window.history.replaceState({}, '', newUrl);
+    };
 
     /**
      * Fetches all games from the API endpoint.
@@ -130,6 +184,10 @@
                 }));
 
                 pagination = apiPagination;
+                currentPage = pagination.page;
+                pageSize = pagination.per_page;
+
+                updateBrowserUrl(pagination);
             } else {
                 error = `Failed to fetch data: ${response.status} ${response.statusText}`;
             }
@@ -188,6 +246,7 @@
     };
 
     onMount(() => {
+        syncFiltersFromUrl();
         fetchPublishers();
         fetchCategories();
         fetchGames();
@@ -209,7 +268,7 @@
                 >
                     <option value="">All Categories</option>
                     {#each categories as category}
-                        <option value={category.id}>{category.name}</option>
+                        <option value={category.id.toString()}>{category.name}</option>
                     {/each}
                 </select>
 
@@ -221,7 +280,7 @@
                 >
                     <option value="">All Publishers</option>
                     {#each publishers as publisher}
-                        <option value={publisher.id}>{publisher.name}</option>
+                        <option value={publisher.id.toString()}>{publisher.name}</option>
                     {/each}
                 </select>
             </div>
@@ -342,15 +401,19 @@
                     </button>
 
                     <div class="flex items-center gap-1">
-                        {#each pageNumbers as pageNumber}
-                            <button
-                                class={`w-9 h-9 rounded-lg border text-sm ${pageNumber === pagination.page ? 'border-blue-500 bg-blue-500/20 text-blue-300 font-semibold' : 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'}`}
-                                on:click={() => changePage(pageNumber)}
-                                aria-current={pageNumber === pagination.page ? 'page' : undefined}
-                                aria-label={`Page ${pageNumber}`}
-                            >
-                                {pageNumber}
-                            </button>
+                        {#each paginationItems as item}
+                            {#if item === '...'}
+                                <span class="w-9 h-9 flex items-center justify-center text-slate-400">…</span>
+                            {:else}
+                                <button
+                                    class={`w-9 h-9 rounded-lg border text-sm ${item === pagination.page ? 'border-blue-500 bg-blue-500/20 text-blue-300 font-semibold' : 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'}`}
+                                    on:click={() => typeof item === 'number' && changePage(item)}
+                                    aria-current={item === pagination.page ? 'page' : undefined}
+                                    aria-label={`Page ${item}`}
+                                >
+                                    {item}
+                                </button>
+                            {/if}
                         {/each}
                     </div>
 
