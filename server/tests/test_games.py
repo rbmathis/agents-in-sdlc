@@ -382,7 +382,8 @@ class TestGamesRoutes(unittest.TestCase):
         """Test successful update of a game"""
         # Arrange - get an existing game
         response = self.client.get(self.GAMES_API_PATH)
-        games = self._get_response_data(response)
+        payload = self._get_response_data(response)
+        games = payload['games']
         game_id = games[0]['id']
         
         update_data = {
@@ -426,7 +427,8 @@ class TestGamesRoutes(unittest.TestCase):
         """Test update fails when no data is provided"""
         # Arrange - get an existing game
         response = self.client.get(self.GAMES_API_PATH)
-        games = self._get_response_data(response)
+        payload = self._get_response_data(response)
+        games = payload['games']
         game_id = games[0]['id']
         
         # Act
@@ -445,7 +447,8 @@ class TestGamesRoutes(unittest.TestCase):
         """Test update fails when publisher doesn't exist"""
         # Arrange - get an existing game
         response = self.client.get(self.GAMES_API_PATH)
-        games = self._get_response_data(response)
+        payload = self._get_response_data(response)
+        games = payload['games']
         game_id = games[0]['id']
         
         update_data = {
@@ -468,7 +471,8 @@ class TestGamesRoutes(unittest.TestCase):
         """Test update fails when category doesn't exist"""
         # Arrange - get an existing game
         response = self.client.get(self.GAMES_API_PATH)
-        games = self._get_response_data(response)
+        payload = self._get_response_data(response)
+        games = payload['games']
         game_id = games[0]['id']
         
         update_data = {
@@ -491,7 +495,8 @@ class TestGamesRoutes(unittest.TestCase):
         """Test update fails when data fails model validation"""
         # Arrange - get an existing game
         response = self.client.get(self.GAMES_API_PATH)
-        games = self._get_response_data(response)
+        payload = self._get_response_data(response)
+        games = payload['games']
         game_id = games[0]['id']
         
         update_data = {
@@ -514,7 +519,8 @@ class TestGamesRoutes(unittest.TestCase):
         """Test successful deletion of a game"""
         # Arrange - get an existing game
         response = self.client.get(self.GAMES_API_PATH)
-        games = self._get_response_data(response)
+        payload = self._get_response_data(response)
+        games = payload['games']
         initial_count = len(games)
         game_id = games[0]['id']
         
@@ -526,7 +532,8 @@ class TestGamesRoutes(unittest.TestCase):
         
         # Verify game was deleted
         response = self.client.get(self.GAMES_API_PATH)
-        games = self._get_response_data(response)
+        payload = self._get_response_data(response)
+        games = payload['games']
         self.assertEqual(len(games), initial_count - 1)
 
     def test_delete_game_not_found(self) -> None:
