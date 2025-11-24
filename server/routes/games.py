@@ -79,6 +79,8 @@ def get_games() -> Response:
     # Apply sorting parameters
     sort_field: str = request.args.get('sort', 'title')
     sort_order: str = request.args.get('order', 'asc').lower()
+    if sort_order not in ('asc', 'desc'):
+        return jsonify({"error": "Invalid order parameter. Must be 'asc' or 'desc'"}), 400
 
     sort_mapping = {
         'title': Game.title,
