@@ -70,7 +70,31 @@
     $: totalItems = pagination.total_items;
     $: showingStart = totalItems === 0 ? 0 : (pagination.page - 1) * pagination.per_page + 1;
     $: showingEnd = totalItems === 0 ? 0 : Math.min(pagination.page * pagination.per_page, totalItems);
-    $: pageNumbers = Array.from({ length: pagination.total_pages }, (_, index) => index + 1);
+    // Smart pagination: show first, last, window around current, with ellipsis
+    $: pageNumbers = (() => {
+        const total = pagination.total_pages;
+        const current = pagination.page;
+        const maxVisible = 7; // window size (including first/last)
+        if (total <= maxVisible) {
+            return Array.from({ length: total }, (_, i) => i + 1);
+        }
+        const pages: (number | string)[] = [];
+        const windowSize = 3; // pages to show on each side of current
+        const start = Math.max(2, current - windowSize);
+        const end = Math.min(total - 1, current + windowSize);
+        pages.push(1);
+        if (start > 2) {
+            pages.push('...');
+        }
+        for (let i = start; i <= end; i++) {
+            pages.push(i);
+        }
+        if (end < total - 1) {
+            pages.push('...');
+        }
+        pages.push(total);
+        return pages;
+    })();
 
     const fetchGames = async () => {
         loading = true;
