@@ -1,6 +1,11 @@
+# =============================================================================
+# Purpose: Provide Flask routes handling game CRUD operations and filtering
+#          capabilities for the Tailspin Toys crowdfunding backend API.
+# =============================================================================
 from flask import jsonify, Response, Blueprint, request
 from models import db, Game, Publisher, Category
 from sqlalchemy.orm import Query
+from typing import Optional
 
 # Create a Blueprint for games routes
 games_bp = Blueprint('games', __name__)
@@ -31,10 +36,26 @@ def get_games() -> Response:
         JSON response containing list of all games
     """
     # Use the base query for all games
-    games_query = get_games_base_query().all()
+    games_query: Query = get_games_base_query()
     
-    # Convert the results using the model's to_dict method
-    games_list = [game.to_dict() for game in games_query]
+    # Apply publisher filter if provided
+    publisher_id: Optional[str] = request.args.get('publisher_id')
+    if publisher_id:
+        try:
+            games_query = games_query.filter(Game.publisher_id == int(publisher_id))
+        except ValueError:
+            return jsonify({"error": "Invalid publisher_id parameter"}), 400
+
+    # Apply category filter if provided
+    category_id: Optional[str] = request.args.get('category_id')
+    if category_id:
+        try:
+            games_query = games_query.filter(Game.category_id == int(category_id))
+        except ValueError:
+            return jsonify({"error": "Invalid category_id parameter"}), 400
+    
+    # Execute query and convert results
+    games_list = [game.to_dict() for game in games_query.all()]
     
     return jsonify(games_list)
 
