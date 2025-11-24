@@ -15,6 +15,15 @@ Users can filter the game catalog by:
 
 The filtering functionality is available on the main games page and updates dynamically without page reloads.
 
+### Game Pagination & Sorting
+
+The games list now supports efficient browsing for larger catalogs:
+
+- **Pagination Controls**: Navigate between pages, change page size (10, 20, or 50 games per page), and view the total number of available games.
+- **URL Parameters**: The API supports `page`, `per_page`, `sort`, and `order` parameters for consistent pagination and sorting behavior.
+- **Sorting Options**: Sort games by title, star rating, or date added (ID) in ascending or descending order.
+- **Filter Integration**: Pagination state resets when filters change to make sure results stay in sync with your selections.
+
 ## Start the workshop
 
 **To begin the workshop, start at [docs/README.md](./docs/README.md)**

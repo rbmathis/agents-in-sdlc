@@ -120,13 +120,15 @@ class TestGamesFiltering(unittest.TestCase):
         """Test filtering games by category ID"""
         # Get category ID for "Strategy"
         response = self.client.get(self.GAMES_API_PATH)
-        games = self._get_response_data(response)
+        payload = self._get_response_data(response)
+        games = payload['games']
         strategy_game = [g for g in games if g['category']['name'] == 'Strategy'][0]
         category_id = strategy_game['category']['id']
         
         # Act - filter by category
         response = self.client.get(f'{self.GAMES_API_PATH}?category_id={category_id}')
-        data = self._get_response_data(response)
+        filtered_payload = self._get_response_data(response)
+        data = filtered_payload['games']
         
         # Assert
         self.assertEqual(response.status_code, 200)
@@ -138,13 +140,15 @@ class TestGamesFiltering(unittest.TestCase):
         """Test filtering games by publisher ID"""
         # Get publisher ID for "DevGames Inc" (has 2 games)
         response = self.client.get(self.GAMES_API_PATH)
-        games = self._get_response_data(response)
+        payload = self._get_response_data(response)
+        games = payload['games']
         devgames_game = [g for g in games if g['publisher']['name'] == 'DevGames Inc'][0]
         publisher_id = devgames_game['publisher']['id']
         
         # Act - filter by publisher
         response = self.client.get(f'{self.GAMES_API_PATH}?publisher_id={publisher_id}')
-        data = self._get_response_data(response)
+        filtered_payload = self._get_response_data(response)
+        data = filtered_payload['games']
         
         # Assert
         self.assertEqual(response.status_code, 200)
@@ -156,14 +160,16 @@ class TestGamesFiltering(unittest.TestCase):
         """Test filtering games by both category and publisher"""
         # Get IDs for Strategy category and DevGames Inc publisher
         response = self.client.get(self.GAMES_API_PATH)
-        games = self._get_response_data(response)
+        payload = self._get_response_data(response)
+        games = payload['games']
         target_game = [g for g in games if g['title'] == 'Pipeline Panic'][0]
         category_id = target_game['category']['id']
         publisher_id = target_game['publisher']['id']
         
         # Act - filter by both
         response = self.client.get(f'{self.GAMES_API_PATH}?category_id={category_id}&publisher_id={publisher_id}')
-        data = self._get_response_data(response)
+        filtered_payload = self._get_response_data(response)
+        data = filtered_payload['games']
         
         # Assert
         self.assertEqual(response.status_code, 200)
@@ -176,7 +182,8 @@ class TestGamesFiltering(unittest.TestCase):
         """Test filtering games with no matching results"""
         # Act - use non-existent category ID
         response = self.client.get(f'{self.GAMES_API_PATH}?category_id=999')
-        data = self._get_response_data(response)
+        filtered_payload = self._get_response_data(response)
+        data = filtered_payload['games']
         
         # Assert
         self.assertEqual(response.status_code, 200)
@@ -206,7 +213,8 @@ class TestGamesFiltering(unittest.TestCase):
         """Test that empty string filter parameters are ignored"""
         # Act - pass empty string for category_id
         response = self.client.get(f'{self.GAMES_API_PATH}?category_id=')
-        data = self._get_response_data(response)
+        filtered_payload = self._get_response_data(response)
+        data = filtered_payload['games']
         
         # Assert - should return all games
         self.assertEqual(response.status_code, 200)
