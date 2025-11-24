@@ -402,7 +402,7 @@
                             {:else}
                                 <button
                                     class={`w-9 h-9 rounded-lg border text-sm ${item === pagination.page ? 'border-blue-500 bg-blue-500/20 text-blue-300 font-semibold' : 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'}`}
-                                    on:click={() => changePage(item)}
+                                    on:click={() => typeof item === 'number' && changePage(item)}
                                     aria-current={item === pagination.page ? 'page' : undefined}
                                     aria-label={`Page ${item}`}
                                 >
