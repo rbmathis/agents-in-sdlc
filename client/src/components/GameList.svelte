@@ -263,7 +263,7 @@
                 >
                     <option value="">All Categories</option>
                     {#each categories as category}
-                        <option value={category.id}>{category.name}</option>
+                        <option value={category.id.toString()}>{category.name}</option>
                     {/each}
                 </select>
 
@@ -275,7 +275,7 @@
                 >
                     <option value="">All Publishers</option>
                     {#each publishers as publisher}
-                        <option value={publisher.id}>{publisher.name}</option>
+                        <option value={publisher.id.toString()}>{publisher.name}</option>
                     {/each}
                 </select>
             </div>
@@ -396,15 +396,19 @@
                     </button>
 
                     <div class="flex items-center gap-1">
-                        {#each pageNumbers as pageNumber}
-                            <button
-                                class={`w-9 h-9 rounded-lg border text-sm ${pageNumber === pagination.page ? 'border-blue-500 bg-blue-500/20 text-blue-300 font-semibold' : 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'}`}
-                                on:click={() => changePage(pageNumber)}
-                                aria-current={pageNumber === pagination.page ? 'page' : undefined}
-                                aria-label={`Page ${pageNumber}`}
-                            >
-                                {pageNumber}
-                            </button>
+                        {#each paginationItems as item}
+                            {#if item === '...'}
+                                <span class="w-9 h-9 flex items-center justify-center text-slate-400">…</span>
+                            {:else}
+                                <button
+                                    class={`w-9 h-9 rounded-lg border text-sm ${item === pagination.page ? 'border-blue-500 bg-blue-500/20 text-blue-300 font-semibold' : 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'}`}
+                                    on:click={() => changePage(item)}
+                                    aria-current={item === pagination.page ? 'page' : undefined}
+                                    aria-label={`Page ${item}`}
+                                >
+                                    {item}
+                                </button>
+                            {/if}
                         {/each}
                     </div>
 
