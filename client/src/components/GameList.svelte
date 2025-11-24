@@ -96,6 +96,10 @@
         return pages;
     })();
 
+    /**
+     * Fetches all games from the API endpoint.
+     * Updates the games array on success or sets error state on failure.
+     */
     const fetchGames = async () => {
         loading = true;
         try {
