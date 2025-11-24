@@ -70,7 +70,32 @@
     $: totalItems = pagination.total_items;
     $: showingStart = totalItems === 0 ? 0 : (pagination.page - 1) * pagination.per_page + 1;
     $: showingEnd = totalItems === 0 ? 0 : Math.min(pagination.page * pagination.per_page, totalItems);
-    $: pageNumbers = Array.from({ length: pagination.total_pages }, (_, index) => index + 1);
+    /**
+     * Smart pagination: returns an array of page numbers and ellipsis for display.
+     * Always shows first, last, current, and up to 2 pages before/after current.
+     */
+    $: paginationItems = (() => {
+        const total = pagination.total_pages;
+        const current = pagination.page;
+        const windowSize = 2; // pages before/after current
+        if (total <= 7) {
+            // Show all if few pages
+            return Array.from({ length: total }, (_, i) => i + 1);
+        }
+        const items: (number | string)[] = [];
+        items.push(1);
+        if (current > windowSize + 2) {
+            items.push('...');
+        }
+        for (let i = Math.max(2, current - windowSize); i <= Math.min(total - 1, current + windowSize); i++) {
+            items.push(i);
+        }
+        if (current < total - windowSize - 1) {
+            items.push('...');
+        }
+        items.push(total);
+        return items;
+    })();
 
     const syncFiltersFromUrl = (): void => {
         if (typeof window === 'undefined') {
