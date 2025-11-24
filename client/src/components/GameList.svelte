@@ -345,6 +345,7 @@
                                 class={`w-9 h-9 rounded-lg border text-sm ${pageNumber === pagination.page ? 'border-blue-500 bg-blue-500/20 text-blue-300 font-semibold' : 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'}`}
                                 on:click={() => changePage(pageNumber)}
                                 aria-current={pageNumber === pagination.page ? 'page' : undefined}
+                                aria-label={`Page ${pageNumber}`}
                             >
                                 {pageNumber}
                             </button>
