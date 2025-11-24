@@ -122,6 +122,11 @@
         }
     };
 
+    /**
+     * Updates the browser URL with current filter and pagination state.
+     * This function synchronizes the URL query parameters with the active filters,
+     * page number, and page size, allowing users to bookmark or share filtered views.
+     */
     const updateBrowserUrl = (paginationState: Pagination): void => {
         if (typeof window === 'undefined') {
             return;
