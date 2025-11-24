@@ -131,6 +131,72 @@ test.describe('Game Listing and Navigation', () => {
     await expect(page.getByTestId('games-grid')).toBeVisible();
   });
 
+  test('should filter games when clicking the category badge on details page', async ({ page }) => {
+    await page.goto('/game/1');
+
+    const categoryLink = page.getByTestId('game-details-category');
+    await expect(categoryLink).toBeVisible();
+
+    const categoryHref = await categoryLink.getAttribute('href');
+    expect(categoryHref).toBeTruthy();
+
+    const categoryUrl = new URL(categoryHref ?? '', 'http://localhost:4321');
+    const expectedCategoryId = categoryUrl.searchParams.get('category_id');
+    expect(expectedCategoryId).toBeTruthy();
+
+    const categoryName = (await categoryLink.innerText()).trim();
+
+    await Promise.all([
+      page.waitForURL((url) => url.toString().includes('category_id=')),
+      categoryLink.click()
+    ]);
+
+    await expect(page).toHaveURL(new RegExp(`category_id=${expectedCategoryId}`));
+    await expect(page.getByTestId('games-grid')).toBeVisible();
+
+    const gameCards = page.getByTestId('game-card');
+    expect(await gameCards.count()).toBeGreaterThan(0);
+
+    const categoryBadges = page.getByTestId('game-category');
+    const badgeCount = await categoryBadges.count();
+    for (let index = 0; index < badgeCount; index += 1) {
+      await expect(categoryBadges.nth(index)).toHaveText(categoryName);
+    }
+  });
+
+  test('should filter games when clicking the publisher badge on details page', async ({ page }) => {
+    await page.goto('/game/1');
+
+    const publisherLink = page.getByTestId('game-details-publisher');
+    await expect(publisherLink).toBeVisible();
+
+    const publisherHref = await publisherLink.getAttribute('href');
+    expect(publisherHref).toBeTruthy();
+
+    const publisherUrl = new URL(publisherHref ?? '', 'http://localhost:4321');
+    const expectedPublisherId = publisherUrl.searchParams.get('publisher_id');
+    expect(expectedPublisherId).toBeTruthy();
+
+    const publisherName = (await publisherLink.innerText()).trim();
+
+    await Promise.all([
+      page.waitForURL((url) => url.toString().includes('publisher_id=')),
+      publisherLink.click()
+    ]);
+
+    await expect(page).toHaveURL(new RegExp(`publisher_id=${expectedPublisherId}`));
+    await expect(page.getByTestId('games-grid')).toBeVisible();
+
+    const gameCards = page.getByTestId('game-card');
+    expect(await gameCards.count()).toBeGreaterThan(0);
+
+    const publisherBadges = page.getByTestId('game-publisher');
+    const badgeCount = await publisherBadges.count();
+    for (let index = 0; index < badgeCount; index += 1) {
+      await expect(publisherBadges.nth(index)).toHaveText(publisherName);
+    }
+  });
+
   test('should handle navigation to non-existent game gracefully', async ({ page }) => {
     // Navigate to a game that doesn't exist
     const response = await page.goto('/game/99999');

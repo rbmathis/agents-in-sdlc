@@ -70,31 +70,55 @@
     $: totalItems = pagination.total_items;
     $: showingStart = totalItems === 0 ? 0 : (pagination.page - 1) * pagination.per_page + 1;
     $: showingEnd = totalItems === 0 ? 0 : Math.min(pagination.page * pagination.per_page, totalItems);
-    // Smart pagination: show first, last, window around current, with ellipsis
-    $: pageNumbers = (() => {
-        const total = pagination.total_pages;
-        const current = pagination.page;
-        const maxVisible = 7; // window size (including first/last)
-        if (total <= maxVisible) {
-            return Array.from({ length: total }, (_, i) => i + 1);
+    $: pageNumbers = Array.from({ length: pagination.total_pages }, (_, index) => index + 1);
+
+    const syncFiltersFromUrl = (): void => {
+        if (typeof window === 'undefined') {
+            return;
         }
-        const pages: (number | string)[] = [];
-        const windowSize = 3; // pages to show on each side of current
-        const start = Math.max(2, current - windowSize);
-        const end = Math.min(total - 1, current + windowSize);
-        pages.push(1);
-        if (start > 2) {
-            pages.push('...');
+
+        const params = new URLSearchParams(window.location.search);
+        const urlCategoryId = params.get('category_id') ?? '';
+        const urlPublisherId = params.get('publisher_id') ?? '';
+        const urlPage = params.get('page');
+        const urlPerPage = params.get('per_page');
+
+        selectedCategoryId = urlCategoryId;
+        selectedPublisherId = urlPublisherId;
+
+        const parsedPage = urlPage ? Number.parseInt(urlPage, 10) : 1;
+        currentPage = Number.isNaN(parsedPage) || parsedPage < 1 ? 1 : parsedPage;
+
+        if (urlPerPage) {
+            const parsedPerPage = Number.parseInt(urlPerPage, 10);
+            if (!Number.isNaN(parsedPerPage) && pageSizeOptions.includes(parsedPerPage)) {
+                pageSize = parsedPerPage;
+            }
         }
-        for (let i = start; i <= end; i++) {
-            pages.push(i);
+    };
+
+    const updateBrowserUrl = (paginationState: Pagination): void => {
+        if (typeof window === 'undefined') {
+            return;
         }
-        if (end < total - 1) {
-            pages.push('...');
+
+        const params = new URLSearchParams();
+
+        if (selectedCategoryId) {
+            params.set('category_id', selectedCategoryId);
         }
-        pages.push(total);
-        return pages;
-    })();
+
+        if (selectedPublisherId) {
+            params.set('publisher_id', selectedPublisherId);
+        }
+
+        params.set('page', paginationState.page.toString());
+        params.set('per_page', paginationState.per_page.toString());
+
+        const queryString = params.toString();
+        const newUrl = `${window.location.pathname}${queryString ? `?${queryString}` : ''}`;
+        window.history.replaceState({}, '', newUrl);
+    };
 
     /**
      * Fetches all games from the API endpoint.
@@ -130,6 +154,10 @@
                 }));
 
                 pagination = apiPagination;
+                currentPage = pagination.page;
+                pageSize = pagination.per_page;
+
+                updateBrowserUrl(pagination);
             } else {
                 error = `Failed to fetch data: ${response.status} ${response.statusText}`;
             }
@@ -188,6 +216,7 @@
     };
 
     onMount(() => {
+        syncFiltersFromUrl();
         fetchPublishers();
         fetchCategories();
         fetchGames();

@@ -100,14 +100,24 @@
             
             <div class="flex flex-wrap gap-2 mt-4 mb-6">
                 {#if gameData.category}
-                    <span class="text-xs font-medium px-2.5 py-0.5 rounded bg-blue-900/60 text-blue-300" data-testid="game-details-category">
+                    <a
+                        href={`/?category_id=${gameData.category.id}`}
+                        class="text-xs font-medium px-2.5 py-0.5 rounded bg-blue-900/60 text-blue-300 hover:bg-blue-800/80 hover:text-blue-200 transition-colors"
+                        data-testid="game-details-category"
+                        data-category-id={gameData.category.id}
+                    >
                         {gameData.category.name}
-                    </span>
+                    </a>
                 {/if}
                 {#if gameData.publisher}
-                    <span class="text-xs font-medium px-2.5 py-0.5 rounded bg-purple-900/60 text-purple-300" data-testid="game-details-publisher">
+                    <a
+                        href={`/?publisher_id=${gameData.publisher.id}`}
+                        class="text-xs font-medium px-2.5 py-0.5 rounded bg-purple-900/60 text-purple-300 hover:bg-purple-800/80 hover:text-purple-200 transition-colors"
+                        data-testid="game-details-publisher"
+                        data-publisher-id={gameData.publisher.id}
+                    >
                         {gameData.publisher.name}
-                    </span>
+                    </a>
                 {/if}
             </div>
             
