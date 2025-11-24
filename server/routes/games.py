@@ -92,16 +92,15 @@ def get_games() -> Response:
     order_callable = asc if sort_order != 'desc' else desc
     games_query = games_query.order_by(order_callable(sort_column))
 
-    # Calculate totals before pagination slicing
+    # Apply offset/limit for pagination and fetch results
+    offset_value: int = (page - 1) * per_page
+    games_list_objects = games_query.offset(offset_value).limit(per_page).all()
+    games_list = [game.to_dict() for game in games_list_objects]
+
+    # Calculate totals for pagination metadata
+    # Note: Count query is separate - consider caching for high-traffic scenarios
     total_items: int = games_query.count()
     total_pages: int = ceil(total_items / per_page) if total_items else 1
-
-    # Apply offset/limit for pagination
-    offset_value: int = (page - 1) * per_page
-    games_query = games_query.offset(offset_value).limit(per_page)
-
-    # Execute query and convert results
-    games_list = [game.to_dict() for game in games_query.all()]
 
     pagination_metadata = {
         "page": page,
