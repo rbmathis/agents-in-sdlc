@@ -26,7 +26,6 @@ def create_app():
     return app
 
 def create_games():
-def create_games():
     """
     Create games, categories and publishers from CSV data for crowd funding platform.
     
