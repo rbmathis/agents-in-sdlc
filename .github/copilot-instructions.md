@@ -95,24 +95,37 @@ def get_categories_base_query() -> Query:
     """
     return db.session.query(Category)
 
-def validate_string_length(field_name: str, value: str, min_length: int = 2, 
-                          allow_none: bool = False) -> str:
+def validate_string_length(field_name: str, value: Optional[str], min_length: int = 2, 
+                          allow_none: bool = False) -> Optional[str]:
     """
     Validate that a string field meets minimum length requirements.
     
     Args:
         field_name: The name of the field being validated (for error messages)
-        value: The value to validate
+        value: The value to validate (can be None if allow_none is True)
         min_length: Minimum required length (default: 2)
         allow_none: Whether None values are allowed (default: False)
         
     Returns:
-        The validated value if it passes validation
+        The validated value unchanged if it passes validation, or None if 
+        value is None and allow_none is True
         
     Raises:
-        ValueError: If validation fails
+        ValueError: If validation fails (empty value, wrong type, or too short)
     """
-    # Implementation here
+    if value is None:
+        if allow_none:
+            return value
+        else:
+            raise ValueError(f"{field_name} cannot be empty")
+    
+    if not isinstance(value, str):
+        raise ValueError(f"{field_name} must be a string")
+        
+    if len(value.strip()) < min_length:
+        raise ValueError(f"{field_name} must be at least {min_length} characters")
+        
+    return value
 ```
 
 #### Class Docstrings
