@@ -71,11 +71,8 @@ def get_games() -> Response:
     except ValueError:
         return jsonify({"error": "Pagination parameters must be integers"}), 400
 
-    if per_page < 1:
-        return jsonify({"error": "per_page must be greater than 0"}), 400
-
-    per_page = min(per_page, MAX_PAGE_SIZE)
-
+    if per_page < 1 or per_page > MAX_PAGE_SIZE:
+        return jsonify({"error": f"per_page must be between 1 and {MAX_PAGE_SIZE}"}), 400
     # Apply sorting parameters
     sort_field: str = request.args.get('sort', 'title')
     sort_order: str = request.args.get('order', 'asc').lower()
