@@ -223,7 +223,7 @@ class TestGamesRoutes(unittest.TestCase):
         self.assertEqual(pagination['page'], 2)
         self.assertEqual(pagination['per_page'], 2)
         self.assertGreaterEqual(pagination['total_items'], 5)
-        self.assertTrue(pagination['total_pages'] >= 3)
+        self.assertGreaterEqual(pagination['total_pages'], 3)
         self.assertTrue(pagination['has_previous'])
 
     def test_invalid_pagination_parameter_returns_error(self) -> None:
