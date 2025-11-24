@@ -1,7 +1,6 @@
 from flask import jsonify, Response, Blueprint, request
 from models import db, Game, Publisher, Category
 from sqlalchemy.orm import Query
-from typing import Union
 
 # Create a Blueprint for games routes
 games_bp = Blueprint('games', __name__)
@@ -160,7 +159,7 @@ def delete_game(id: int) -> tuple[Response, int]:
         db.session.delete(game)
         db.session.commit()
         
-        return jsonify({}), 204
+        return Response('', 204)
         
     except Exception as e:
         # Handle unexpected errors
