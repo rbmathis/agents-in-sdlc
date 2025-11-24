@@ -1,12 +1,32 @@
 <script lang="ts">
     import { onMount } from "svelte";
 
+    interface GameApiPublisher {
+        id: number;
+        name: string;
+    }
+
+    interface GameApiCategory {
+        id: number;
+        name: string;
+    }
+
+    interface GameApiResponse {
+        id: number;
+        title: string;
+        description: string;
+        publisher?: GameApiPublisher | null;
+        category?: GameApiCategory | null;
+        starRating?: number | null;
+    }
+
     interface Game {
         id: number;
         title: string;
         description: string;
         publisher_name?: string;
         category_name?: string;
+        starRating?: number | null;
     }
 
     interface Publisher {
@@ -19,6 +39,15 @@
         name: string;
     }
 
+    interface Pagination {
+        page: number;
+        per_page: number;
+        total_items: number;
+        total_pages: number;
+        has_next: boolean;
+        has_previous: boolean;
+    }
+
     export let games: Game[] = [];
     let loading = true;
     let error: string | null = null;
@@ -26,6 +55,46 @@
     let categories: Category[] = [];
     let selectedPublisherId: string = '';
     let selectedCategoryId: string = '';
+    let pagination: Pagination = {
+        page: 1,
+        per_page: 20,
+        total_items: 0,
+        total_pages: 1,
+        has_next: false,
+        has_previous: false,
+    };
+    let currentPage: number = 1;
+    let pageSize: number = 20;
+    const pageSizeOptions: number[] = [10, 20, 50];
+
+    $: totalItems = pagination.total_items;
+    $: showingStart = totalItems === 0 ? 0 : (pagination.page - 1) * pagination.per_page + 1;
+    $: showingEnd = totalItems === 0 ? 0 : Math.min(pagination.page * pagination.per_page, totalItems);
+    // Smart pagination: show first, last, window around current, with ellipsis
+    $: pageNumbers = (() => {
+        const total = pagination.total_pages;
+        const current = pagination.page;
+        const maxVisible = 7; // window size (including first/last)
+        if (total <= maxVisible) {
+            return Array.from({ length: total }, (_, i) => i + 1);
+        }
+        const pages: (number | string)[] = [];
+        const windowSize = 3; // pages to show on each side of current
+        const start = Math.max(2, current - windowSize);
+        const end = Math.min(total - 1, current + windowSize);
+        pages.push(1);
+        if (start > 2) {
+            pages.push('...');
+        }
+        for (let i = start; i <= end; i++) {
+            pages.push(i);
+        }
+        if (end < total - 1) {
+            pages.push('...');
+        }
+        pages.push(total);
+        return pages;
+    })();
 
     /**
      * Fetches all games from the API endpoint.
@@ -41,11 +110,26 @@
             if (selectedCategoryId) {
                 params.append('category_id', selectedCategoryId);
             }
+            params.append('page', currentPage.toString());
+            params.append('per_page', pageSize.toString());
             
             const url = `/api/games${params.toString() ? '?' + params.toString() : ''}`;
             const response = await fetch(url);
             if(response.ok) {
-                games = await response.json();
+                const payload = await response.json();
+                const apiGames: GameApiResponse[] = payload?.games ?? [];
+                const apiPagination: Pagination = payload?.pagination ?? pagination;
+
+                games = apiGames.map((game) => ({
+                    id: game.id,
+                    title: game.title,
+                    description: game.description,
+                    publisher_name: game.publisher?.name,
+                    category_name: game.category?.name,
+                    starRating: game.starRating ?? null,
+                }));
+
+                pagination = apiPagination;
             } else {
                 error = `Failed to fetch data: ${response.status} ${response.statusText}`;
             }
@@ -79,12 +163,27 @@
     };
 
     const handleFilterChange = () => {
+        currentPage = 1;
         fetchGames();
     };
 
     const clearFilters = () => {
         selectedPublisherId = '';
         selectedCategoryId = '';
+        currentPage = 1;
+        fetchGames();
+    };
+
+    const changePage = (page: number) => {
+        if (page !== currentPage && page >= 1 && page <= pagination.total_pages) {
+            currentPage = page;
+            fetchGames();
+        }
+    };
+
+    const changePageSize = (size: number) => {
+        pageSize = size;
+        currentPage = 1;
         fetchGames();
     };
 
@@ -210,6 +309,60 @@
                     </div>
                 </a>
             {/each}
+        </div>
+
+        <div class="mt-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between text-slate-300">
+            <div class="text-sm">
+                Showing <span class="font-semibold text-slate-100">{showingStart}</span> to <span class="font-semibold text-slate-100">{showingEnd}</span> of <span class="font-semibold text-slate-100">{totalItems}</span> games
+            </div>
+
+            <div class="flex flex-col lg:flex-row lg:items-center gap-4">
+                <div class="flex items-center gap-2">
+                    <label for="page-size" class="text-sm">Games per page:</label>
+                    <select
+                        id="page-size"
+                        bind:value={pageSize}
+                        on:change={(event) => changePageSize(Number((event.target as HTMLSelectElement).value))}
+                        class="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 px-3 py-2 cursor-pointer"
+                        data-testid="page-size-selector"
+                    >
+                        {#each pageSizeOptions as option}
+                            <option value={option}>{option}</option>
+                        {/each}
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-2" data-testid="pagination-controls">
+                    <button
+                        on:click={() => changePage(pagination.page - 1)}
+                        disabled={!pagination.has_previous}
+                        class="px-3 py-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-200 text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-700 transition-colors"
+                    >
+                        Previous
+                    </button>
+
+                    <div class="flex items-center gap-1">
+                        {#each pageNumbers as pageNumber}
+                            <button
+                                class={`w-9 h-9 rounded-lg border text-sm ${pageNumber === pagination.page ? 'border-blue-500 bg-blue-500/20 text-blue-300 font-semibold' : 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'}`}
+                                on:click={() => changePage(pageNumber)}
+                                aria-current={pageNumber === pagination.page ? 'page' : undefined}
+                                aria-label={`Page ${pageNumber}`}
+                            >
+                                {pageNumber}
+                            </button>
+                        {/each}
+                    </div>
+
+                    <button
+                        on:click={() => changePage(pagination.page + 1)}
+                        disabled={!pagination.has_next}
+                        class="px-3 py-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-200 text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-700 transition-colors"
+                    >
+                        Next
+                    </button>
+                </div>
+            </div>
         </div>
     {/if}
 </div>

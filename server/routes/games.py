@@ -3,12 +3,17 @@
 #          capabilities for the Tailspin Toys crowdfunding backend API.
 # =============================================================================
 from flask import jsonify, Response, Blueprint, request
+from math import ceil
 from models import db, Game, Publisher, Category
+from sqlalchemy import asc, desc
 from sqlalchemy.orm import Query
 from typing import Optional
 
 # Create a Blueprint for games routes
 games_bp = Blueprint('games', __name__)
+
+DEFAULT_PAGE_SIZE: int = 20
+MAX_PAGE_SIZE: int = 50
 
 def get_games_base_query() -> Query:
     """
@@ -54,10 +59,61 @@ def get_games() -> Response:
         except ValueError:
             return jsonify({"error": "Invalid category_id parameter"}), 400
     
+    # Apply pagination parameters
+    page_param: str = request.args.get('page', '1')
+    per_page_param: str = request.args.get('per_page', str(DEFAULT_PAGE_SIZE))
+
+    try:
+        page: int = max(int(page_param), 1)
+        per_page: int = int(per_page_param)
+    except ValueError:
+        return jsonify({"error": "Pagination parameters must be integers"}), 400
+
+    if per_page < 1 or per_page > MAX_PAGE_SIZE:
+        return jsonify({"error": f"per_page must be between 1 and {MAX_PAGE_SIZE}"}), 400
+    # Apply sorting parameters
+    sort_field: str = request.args.get('sort', 'title')
+    sort_order: str = request.args.get('order', 'asc').lower()
+    if sort_order not in ('asc', 'desc'):
+        return jsonify({"error": "Invalid order parameter. Must be 'asc' or 'desc'"}), 400
+
+    sort_mapping = {
+        'title': Game.title,
+        'star_rating': Game.star_rating,
+        'id': Game.id,
+    }
+
+    if sort_field not in sort_mapping:
+        return jsonify({"error": "Invalid sort parameter"}), 400
+
+    sort_column = sort_mapping[sort_field]
+    order_callable = asc if sort_order != 'desc' else desc
+    games_query = games_query.order_by(order_callable(sort_column))
+
+    # Calculate totals before pagination slicing
+    total_items: int = games_query.count()
+    total_pages: int = ceil(total_items / per_page) if total_items else 1
+
+    # Apply offset/limit for pagination
+    offset_value: int = (page - 1) * per_page
+    games_query = games_query.offset(offset_value).limit(per_page)
+
     # Execute query and convert results
     games_list = [game.to_dict() for game in games_query.all()]
+
+    pagination_metadata = {
+        "page": page,
+        "per_page": per_page,
+        "total_items": total_items,
+        "total_pages": total_pages,
+        "has_next": page < total_pages,
+        "has_previous": page > 1,
+    }
     
-    return jsonify(games_list)
+    return jsonify({
+        "games": games_list,
+        "pagination": pagination_metadata,
+    })
 
 @games_bp.route('/api/games/<int:id>', methods=['GET'])
 def get_game(id: int) -> tuple[Response, int] | Response:

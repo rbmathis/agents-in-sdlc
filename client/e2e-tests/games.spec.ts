@@ -24,6 +24,22 @@ test.describe('Game Listing and Navigation', () => {
     await expect(gameCards.first().getByTestId('game-title')).not.toBeEmpty();
   });
 
+  test('should show pagination controls and allow page size change', async ({ page }) => {
+    await page.goto('/');
+
+    const paginationControls = page.getByTestId('pagination-controls');
+    await expect(paginationControls).toBeVisible();
+
+    const pageSizeSelector = page.getByTestId('page-size-selector');
+    await expect(pageSizeSelector).toBeVisible();
+
+    // Change the page size to ensure the UI reacts without errors
+    await pageSizeSelector.selectOption('10');
+
+    // Changing page size should keep pagination controls visible
+    await expect(paginationControls).toBeVisible();
+  });
+
   test('should navigate to correct game details page when clicking on a game', async ({ page }) => {
     await page.goto('/');
     
