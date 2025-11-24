@@ -44,7 +44,6 @@ class TestGamesRoutes(unittest.TestCase):
         Creates a fresh Flask app with in-memory SQLite database for testing,
         registers blueprints, and seeds test data.
         """
-        """Set up test database and seed data"""
         # Create a fresh Flask app for testing
         self.app = Flask(__name__)
         self.app.config['TESTING'] = True
@@ -71,7 +70,6 @@ class TestGamesRoutes(unittest.TestCase):
         
         Removes session, drops all tables, and disposes database engine.
         """
-        """Clean up test database and ensure proper connection closure"""
         with self.app.app_context():
             db.session.remove()
             db.drop_all()
@@ -84,7 +82,6 @@ class TestGamesRoutes(unittest.TestCase):
         Creates publishers, categories, and games from TEST_DATA dictionary
         and commits them to the test database.
         """
-        """Helper method to seed test data"""
         # Create test publishers
         publishers = [
             Publisher(**publisher_data) for publisher_data in self.TEST_DATA["publishers"]
@@ -126,7 +123,6 @@ class TestGamesRoutes(unittest.TestCase):
         Returns:
             Parsed JSON data from response
         """
-        """Helper method to parse response data"""
         return json.loads(response.data)
 
     def test_get_games_success(self) -> None:
@@ -136,7 +132,6 @@ class TestGamesRoutes(unittest.TestCase):
         Verifies that all games are returned with correct data including
         titles, publishers, categories, and star ratings.
         """
-        """Test successful retrieval of multiple games"""
         # Act
         response = self.client.get(self.GAMES_API_PATH)
         data = self._get_response_data(response)
@@ -162,7 +157,6 @@ class TestGamesRoutes(unittest.TestCase):
         
         Verifies that the response is a list and contains all required fields.
         """
-        """Test the response structure for games"""
         # Act
         response = self.client.get(self.GAMES_API_PATH)
         data = self._get_response_data(response)
@@ -182,7 +176,6 @@ class TestGamesRoutes(unittest.TestCase):
         
         Verifies that a specific game can be retrieved with correct data.
         """
-        """Test successful retrieval of a single game by ID"""
         # Get the first game's ID from the list endpoint
         response = self.client.get(self.GAMES_API_PATH)
         games = self._get_response_data(response)
@@ -206,7 +199,6 @@ class TestGamesRoutes(unittest.TestCase):
         
         Verifies that a 404 error is returned when game is not found.
         """
-        """Test retrieval of a non-existent game by ID"""
         # Act
         response = self.client.get(f'{self.GAMES_API_PATH}/999')
         data = self._get_response_data(response)

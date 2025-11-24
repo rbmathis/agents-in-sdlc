@@ -12,7 +12,6 @@ def create_app():
     Returns:
         Configured Flask application instance with database initialized
     """
-    """Create and configure Flask app for database operations"""
     app = Flask(__name__)
 
     # Configure and initialize the database
@@ -27,13 +26,13 @@ def create_app():
     return app
 
 def create_games():
+def create_games():
     """
     Create games, categories and publishers from CSV data for crowd funding platform.
     
     Reads game data from CSV file and populates the database with games, 
     categories, and publishers. Generates random star ratings for each game.
     """
-    """Create games, categories and publishers from CSV data for crowd funding platform"""
     app = create_app()
     
     with app.app_context():
