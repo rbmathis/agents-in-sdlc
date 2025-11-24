@@ -126,8 +126,6 @@
                 }));
 
                 pagination = apiPagination;
-                currentPage = pagination.page;
-                pageSize = pagination.per_page;
             } else {
                 error = `Failed to fetch data: ${response.status} ${response.statusText}`;
             }
