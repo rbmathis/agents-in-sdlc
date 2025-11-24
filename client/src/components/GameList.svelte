@@ -9,14 +9,37 @@
         category_name?: string;
     }
 
+    interface Publisher {
+        id: number;
+        name: string;
+    }
+
+    interface Category {
+        id: number;
+        name: string;
+    }
+
     export let games: Game[] = [];
     let loading = true;
     let error: string | null = null;
+    let publishers: Publisher[] = [];
+    let categories: Category[] = [];
+    let selectedPublisherId: string = '';
+    let selectedCategoryId: string = '';
 
     const fetchGames = async () => {
         loading = true;
         try {
-            const response = await fetch('/api/games');
+            const params = new URLSearchParams();
+            if (selectedPublisherId) {
+                params.append('publisher_id', selectedPublisherId);
+            }
+            if (selectedCategoryId) {
+                params.append('category_id', selectedCategoryId);
+            }
+            
+            const url = `/api/games${params.toString() ? '?' + params.toString() : ''}`;
+            const response = await fetch(url);
             if(response.ok) {
                 games = await response.json();
             } else {
@@ -29,13 +52,88 @@
         }
     };
 
+    const fetchPublishers = async () => {
+        try {
+            const response = await fetch('/api/publishers');
+            if (response.ok) {
+                publishers = await response.json();
+            }
+        } catch (err) {
+            console.error('Failed to fetch publishers:', err);
+        }
+    };
+
+    const fetchCategories = async () => {
+        try {
+            const response = await fetch('/api/categories');
+            if (response.ok) {
+                categories = await response.json();
+            }
+        } catch (err) {
+            console.error('Failed to fetch categories:', err);
+        }
+    };
+
+    const handleFilterChange = () => {
+        fetchGames();
+    };
+
+    const clearFilters = () => {
+        selectedPublisherId = '';
+        selectedCategoryId = '';
+        fetchGames();
+    };
+
     onMount(() => {
+        fetchPublishers();
+        fetchCategories();
         fetchGames();
     });
 </script>
 
 <div>
-    <h2 class="text-2xl font-medium mb-6 text-slate-100">Featured Games</h2>
+    <div class="flex justify-between items-start mb-6">
+        <h2 class="text-2xl font-medium text-slate-100">Featured Games</h2>
+        
+        <!-- Filter controls -->
+        <div class="flex gap-3 items-center">
+            <div class="flex gap-2">
+                <select 
+                    bind:value={selectedCategoryId}
+                    on:change={handleFilterChange}
+                    class="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 px-3 py-2 cursor-pointer"
+                    data-testid="category-filter"
+                >
+                    <option value="">All Categories</option>
+                    {#each categories as category}
+                        <option value={category.id}>{category.name}</option>
+                    {/each}
+                </select>
+
+                <select 
+                    bind:value={selectedPublisherId}
+                    on:change={handleFilterChange}
+                    class="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 px-3 py-2 cursor-pointer"
+                    data-testid="publisher-filter"
+                >
+                    <option value="">All Publishers</option>
+                    {#each publishers as publisher}
+                        <option value={publisher.id}>{publisher.name}</option>
+                    {/each}
+                </select>
+            </div>
+
+            {#if selectedCategoryId || selectedPublisherId}
+                <button 
+                    on:click={clearFilters}
+                    class="text-sm text-blue-400 hover:text-blue-300 underline transition-colors"
+                    data-testid="clear-filters"
+                >
+                    Clear Filters
+                </button>
+            {/if}
+        </div>
+    </div>
     
     {#if loading}
         <!-- loading animation -->

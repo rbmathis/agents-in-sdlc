@@ -1,11 +1,18 @@
-from flask import jsonify, Response, Blueprint
+from flask import jsonify, Response, Blueprint, request
 from models import db, Game, Publisher, Category
 from sqlalchemy.orm import Query
+from typing import Optional
 
 # Create a Blueprint for games routes
 games_bp = Blueprint('games', __name__)
 
 def get_games_base_query() -> Query:
+    """
+    Get the base query for games with joined publisher and category.
+    
+    Returns:
+        Query: SQLAlchemy query object for games
+    """
     return db.session.query(Game).join(
         Publisher, 
         Game.publisher_id == Publisher.id, 
@@ -18,16 +25,51 @@ def get_games_base_query() -> Query:
 
 @games_bp.route('/api/games', methods=['GET'])
 def get_games() -> Response:
-    # Use the base query for all games
-    games_query = get_games_base_query().all()
+    """
+    Retrieve all games with optional filtering by category and/or publisher.
     
-    # Convert the results using the model's to_dict method
-    games_list = [game.to_dict() for game in games_query]
+    Query Parameters:
+        category_id (int, optional): Filter games by category ID
+        publisher_id (int, optional): Filter games by publisher ID
+    
+    Returns:
+        Response: JSON array of game objects
+    """
+    # Start with the base query
+    games_query = get_games_base_query()
+    
+    # Apply category filter if provided
+    category_id: Optional[str] = request.args.get('category_id')
+    if category_id:
+        try:
+            games_query = games_query.filter(Game.category_id == int(category_id))
+        except ValueError:
+            return jsonify({"error": "Invalid category_id parameter"}), 400
+    
+    # Apply publisher filter if provided
+    publisher_id: Optional[str] = request.args.get('publisher_id')
+    if publisher_id:
+        try:
+            games_query = games_query.filter(Game.publisher_id == int(publisher_id))
+        except ValueError:
+            return jsonify({"error": "Invalid publisher_id parameter"}), 400
+    
+    # Execute query and convert results
+    games_list = [game.to_dict() for game in games_query.all()]
     
     return jsonify(games_list)
 
 @games_bp.route('/api/games/<int:id>', methods=['GET'])
 def get_game(id: int) -> tuple[Response, int] | Response:
+    """
+    Retrieve a single game by ID.
+    
+    Args:
+        id (int): The game ID
+    
+    Returns:
+        Response: JSON object of game details or error message
+    """
     # Use the base query and add filter for specific game
     game_query = get_games_base_query().filter(Game.id == id).first()
     
