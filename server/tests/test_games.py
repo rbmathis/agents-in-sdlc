@@ -106,7 +106,15 @@ class TestGamesRoutes(unittest.TestCase):
         return json.loads(response.data)
 
     def _create_additional_games(self, count: int) -> None:
-        """Helper method to create additional games for pagination tests"""
+        """
+        Create additional games for pagination tests.
+
+        Args:
+            count (int): Number of additional games to create.
+
+        Returns:
+            None
+        """
         with self.app.app_context():
             publisher: Publisher = Publisher.query.first()
             category: Category = Category.query.first()
